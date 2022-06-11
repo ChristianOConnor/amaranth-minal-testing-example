@@ -50,8 +50,9 @@ namespace TestRunProject.Tests
             };
 
             postRequest2.Content = new FormUrlEncodedContent(formModel);
-            var response2 = await client.SendAsync(postRequest2);
-            response2.EnsureSuccessStatusCode();
+            var response = await client.SendAsync(postRequest2);
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             var profResponse = await client.GetAsync("/Profile");
             //var antiForgeryValues2 = await AntiForgeryTokenExtractor.ExtractAntiForgeryValues(initResponse);
@@ -80,27 +81,6 @@ namespace TestRunProject.Tests
             var reLoginResponse = await client.SendAsync(postRequest3);
             reLoginResponse.EnsureSuccessStatusCode();
             Assert.Equal(HttpStatusCode.OK, reLoginResponse.StatusCode);
-        }
-
-        public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-        {
-            public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
-                ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
-                : base(options, logger, encoder, clock)
-            {
-            }
-
-            protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-            {
-                var claims = new[] { new Claim(ClaimTypes.Name, "Test user") };
-                var identity = new ClaimsIdentity(claims, "Test");
-                var principal = new ClaimsPrincipal(identity);
-                var ticket = new AuthenticationTicket(principal, "Test");
-
-                var result = AuthenticateResult.Success(ticket);
-
-                return Task.FromResult(result);
-            }
         }
     }
 }
