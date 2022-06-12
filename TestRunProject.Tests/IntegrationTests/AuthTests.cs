@@ -44,15 +44,24 @@ namespace TestRunProject.Tests
             var formModel = new Dictionary<string, string>
             {
                 { AntiForgeryTokenExtractor.AntiForgeryFieldName, antiForgeryValues.fieldValue },
-                { "Email", "test2@example.com" },
-                { "Password", "pas3w02!rRd" },
-                { "ConfirmPassword", "pas3w02!rRd" },
+                { "Input.Email", "test2@example.com" },                
+                { "Input.Password", "pas3w02!rRd" },
+                { "Input.ConfirmPassword", "pas3w02!rRd" }
             };
 
             postRequest2.Content = new FormUrlEncodedContent(formModel);
             var response = await client.SendAsync(postRequest2);
             response.EnsureSuccessStatusCode();
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var scopedServices = scope.ServiceProvider;
+                var db = scopedServices.GetRequiredService<ApplicationDbContext>();
+                var firstUser = db.Users.FirstOrDefault();
+                Assert.Equal(1, db.Users.Count());
+                Assert.Equal("test2@example.com", firstUser?.Email);
+            }
 
             var profResponse = await client.GetAsync("/Profile");
             //var antiForgeryValues2 = await AntiForgeryTokenExtractor.ExtractAntiForgeryValues(initResponse);
