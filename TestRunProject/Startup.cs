@@ -59,7 +59,7 @@ namespace TestRunProject
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
-            
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -72,14 +72,15 @@ namespace TestRunProject
             }
 
             app.UseHttpsRedirection();
-            app.UseCookiePolicy();
+            //app.UseCookiePolicy();
             app.UseStaticFiles();
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseStatusCodePages();
 
-            app.UseEndpoints(endpoints => {
+            app.UseEndpoints(endpoints =>
+            {
                 endpoints.MapControllers();
                 endpoints.MapRazorPages();
                 endpoints.MapDefaultControllerRoute();

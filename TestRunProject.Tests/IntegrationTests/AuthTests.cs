@@ -17,10 +17,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace TestRunProject.Tests
 {
-    public class AdminControllerTests : 
+    public class AdminControllerTests :
         IClassFixture<CustomWebApplicationFactory<TestRunProject.Startup>>
     {
-        private readonly CustomWebApplicationFactory<TestRunProject.Startup> 
+        private readonly CustomWebApplicationFactory<TestRunProject.Startup>
             _factory;
 
         public AdminControllerTests(
@@ -32,27 +32,41 @@ namespace TestRunProject.Tests
         [Fact]
         public async Task DLoginTest()
         {
+            CookieContainer cookies = new CookieContainer();
+            HttpClientHandler handler = new HttpClientHandler();
+            handler.CookieContainer = cookies;
+
+
+
             var client = _factory.CreateClient(
                 new WebApplicationFactoryClientOptions
                 {
-                    AllowAutoRedirect = true
+                    AllowAutoRedirect = true,
+                    HandleCookies = true
                 });
-            var newAntiForg = await client.GetAsync("/Identity/Account/Register");
-            var antiForgeryValues = await AntiForgeryTokenExtractor.ExtractAntiForgeryValues(newAntiForg);
+
+            var viewRegisterResp = await client.GetAsync("/Identity/Account/Register");
+            viewRegisterResp.EnsureSuccessStatusCode();
+
+            var antiForgeryValues = await AntiForgeryTokenExtractor.ExtractAntiForgeryValues(viewRegisterResp);
+
+
+            // TODO Assert(...)
+
             var postRequest2 = new HttpRequestMessage(HttpMethod.Post, "/Identity/Account/Register");
             postRequest2.Headers.Add("Cookie", new CookieHeaderValue(AntiForgeryTokenExtractor.AntiForgeryCookieName, antiForgeryValues.cookieValue).ToString());
             var formModel = new Dictionary<string, string>
             {
                 { AntiForgeryTokenExtractor.AntiForgeryFieldName, antiForgeryValues.fieldValue },
-                { "Input.Email", "test2@example.com" },                
+                { "Input.Email", "test2@example.com" },
                 { "Input.Password", "pas3w02!rRd" },
                 { "Input.ConfirmPassword", "pas3w02!rRd" }
             };
 
             postRequest2.Content = new FormUrlEncodedContent(formModel);
-            var response = await client.SendAsync(postRequest2);
-            response.EnsureSuccessStatusCode();
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var postRegisterResp = await client.SendAsync(postRequest2);
+            postRegisterResp.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.OK, postRegisterResp.StatusCode);
 
             using (var scope = _factory.Services.CreateScope())
             {
@@ -63,20 +77,34 @@ namespace TestRunProject.Tests
                 Assert.Equal("test2@example.com", firstUser?.Email);
             }
 
-            var profResponse = await client.GetAsync("/Profile");
-            //var antiForgeryValues2 = await AntiForgeryTokenExtractor.ExtractAntiForgeryValues(initResponse);
-            var postRequestLogout = new HttpRequestMessage(HttpMethod.Post, "/Identity/Account/Logout");
-            postRequestLogout.Headers.Add("Cookie", new CookieHeaderValue(AntiForgeryTokenExtractor.AntiForgeryCookieName, antiForgeryValues.cookieValue).ToString());
+
+
+            //var profResponse = await client.GetAsync("/Profile");
+            //profResponse.EnsureSuccessStatusCode();
+
+
+            // var postRequestLogout = new HttpRequestMessage(HttpMethod.Post, "/Identity/Account/Logout");
+            // postRequestLogout.Headers.Add("Cookie", new CookieHeaderValue(AntiForgeryTokenExtractor.AntiForgeryCookieName, antiForgeryValues.cookieValue).ToString());
+
             var formModel2 = new Dictionary<string, string>
             {
                 { AntiForgeryTokenExtractor.AntiForgeryFieldName, antiForgeryValues.fieldValue },
+                {
+                    "returnUrl", ""
+                }
             };
-            postRequestLogout.Content = new FormUrlEncodedContent(formModel2);
 
-            var logoutAnswer = await client.SendAsync(postRequestLogout);
+            client = _factory.CreateClient();
+            var logoutAnswer = await client.PostAsync("/Identity/Account/Logout", new FormUrlEncodedContent(formModel2));
+
+            //postRequestLogout.Content = new FormUrlEncodedContent(formModel2);
+
+            //var logoutAnswer = await client.SendAsync(postRequestLogout);
             Console.WriteLine(logoutAnswer.StatusCode);
             logoutAnswer.EnsureSuccessStatusCode();
             Assert.Equal(HttpStatusCode.OK, logoutAnswer.StatusCode);
+
+            // TODO Assert user is logged out on the server side
 
             var postRequest3 = new HttpRequestMessage(HttpMethod.Post, "/Identity/Account/Login");
             postRequest3.Headers.Add("Cookie", new CookieHeaderValue(AntiForgeryTokenExtractor.AntiForgeryCookieName, antiForgeryValues.cookieValue).ToString());
