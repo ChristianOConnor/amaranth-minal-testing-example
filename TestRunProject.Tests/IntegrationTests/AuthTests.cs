@@ -39,6 +39,15 @@ namespace TestRunProject.Tests
                 var registerResponse2 = await client.SendAsync(postRequest2);
                 registerResponse2.EnsureSuccessStatusCode();
 
+                // -- LOGOUT --
+
+                var logoutRequest = new StringContent("");
+                logoutRequest.Headers.Add("RequestVerificationToken", requestVerificationToken);
+
+                var logoutResponse = await client.PostAsync("/Identity/Account/Logout", logoutRequest);
+
+                logoutResponse.EnsureSuccessStatusCode();
+
                 // -- LOGIN --
 
                 var loginResponse = await client.GetAsync("/Identity/Account/Login");
@@ -58,15 +67,6 @@ namespace TestRunProject.Tests
                 loginRequest.Content = new FormUrlEncodedContent(formModel);
                 var loginResponse2 = await client.SendAsync(loginRequest);
                 loginResponse2.EnsureSuccessStatusCode();
-
-                // -- LOGOUT --
-
-                var logoutRequest = new StringContent("");
-                logoutRequest.Headers.Add("RequestVerificationToken", requestVerificationToken);
-
-                var logoutResponse = await client.PostAsync("/Identity/Account/Logout", logoutRequest);
-
-                logoutResponse.EnsureSuccessStatusCode();
             }
         }
     }
